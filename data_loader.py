@@ -2,53 +2,31 @@ import random
 import numpy as np
 from itertools import cycle
 from utils import imshow_grid, transform_config
-
-from torchvision import datasets
+import pandas as pd
 from torch.utils.data import Dataset, DataLoader
 
-
-class MNIST_Paired(Dataset):
-    def __init__(self, root='mnist', download=True, train=True, transform=transform_config):
-        self.mnist = datasets.MNIST(root=root, download=download, train=train, transform=transform)
-
-        self.data_dict = {}
-
-        for i in range(self.__len__()):
-            image, label = self.mnist.__getitem__(i)
-
-            try:
-                self.data_dict[label.item()]
-            except KeyError:
-                self.data_dict[label.item()] = []
-            self.data_dict[label.item()].append(image)
+class TrustpilotDataset(Dataset):
+    def __init__(self, csv_file, transform=None):
+        self.data = pd.read_csv(csv_file, dtype={'rating': int})
+        self.transform = transform
+        self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')  # To do: get the tokenizer
 
     def __len__(self):
-        return self.mnist.__len__()
+        return len(self.data)
 
     def __getitem__(self, index):
-        image, label = self.mnist.__getitem__(index)
+        comment = self.data['comment'][index]
+        rating = self.data['rating'][index]
 
-        # return another image of the same class randomly selected from the data dictionary
-        # this is done to simulate pair-wise labeling of data
-        return image, random.SystemRandom().choice(self.data_dict[label.item()]), label
+        # Tokenize the comment and convert to tensor
+        tokenized_comment = self.tokenizer(comment, padding='max_length', max_length=100, truncation=True, return_tensors='pt')['input_ids'].squeeze(0)
 
+        return tokenized_comment, rating
 
 if __name__ == '__main__':
-    """
-    test code for data loader
-    """
-    mnist_paired = MNIST_Paired()
-    loader = cycle(DataLoader(mnist_paired, batch_size=16, shuffle=True, num_workers=0, drop_last=True))
+    trustpilot_dataset = TrustpilotDataset('data/trustpilot.csv')
+    loader = cycle(DataLoader(trustpilot_dataset, batch_size=16, shuffle=True, num_workers=0, drop_last=True))
 
-    print(mnist_paired.data_dict.keys())
-
-    image_batch, image_batch_2, labels_batch = next(loader)
-    print(labels_batch)
-
-    image_batch = np.transpose(image_batch, (0, 2, 3, 1))
-    image_batch = np.concatenate((image_batch, image_batch, image_batch), axis=3)
-    imshow_grid(image_batch)
-
-    image_batch_2 = np.transpose(image_batch_2, (0, 2, 3, 1))
-    image_batch_2 = np.concatenate((image_batch_2, image_batch_2, image_batch_2), axis=3)
-    imshow_grid(image_batch_2)
+    comment_batch, rating_batch = next(loader)
+    print(comment_batch)
+    print(rating_batch)
