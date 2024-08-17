@@ -26,19 +26,7 @@ Generative models that learn disentangled representations for different factors 
 <img src="images/backward_phase.png" alt="Reverse cycle" width="587px" />
 </p>
 
-## Results
 
-#### Empirical comparison of quality of disentangled representations
-
-<p align="center">
-<img src="images/table.png" alt="Classification accuracy table" width="581px" align="middle" />
-</p>
-
-#### Comparison of image generation capabilities of various architectures
-
-<p align="center">
-<img src="images/mnist_swap.png" alt="Image generation" width="593px" align="middle" />
-</p>
 
 #### t-SNE plots to show leakage of information pertaining to specified factors of variation into the unspecified latent space
 
